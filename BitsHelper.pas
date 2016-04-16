@@ -5,17 +5,18 @@ interface
 uses
   Classes;
 
-function CardinalToBits(Value: Cardinal): TBits;
+function CardinalToBits(Value: Cardinal; BitsCount: Integer = 32): TBits;
 function BitsToCardinal(Bits: TBits): Cardinal;
 function BitsToString(Bits: TBits): String;
+function ConcatBits(First, Second: TBits): TBits;
 
 implementation
 
-function CardinalToBits(Value: Cardinal): TBits;
+function CardinalToBits(Value: Cardinal; BitsCount: Integer = 32): TBits;
 var
   i: Integer;
 begin
-  Result := TBits.Create(SizeOf(Value) * 8);
+  Result := TBits.Create(BitsCount);
   i := 0;
   while Value <> 0 do
   begin
@@ -47,4 +48,16 @@ begin
     else
       Result := Result + '0';
 end;
+
+function ConcatBits(First, Second: TBits): TBits;
+var
+  i: Integer;
+begin
+  Result := TBits.Create(First.Size + Second.Size);
+  for i := 0 to Second.Size - 1 do
+    Result.Bits[i] := Second.Bits[i];
+  for i := 0 to First.Size - 1 do
+    Result.Bits[i + Second.Size] := First.Bits[i];
+end;
+
 end.

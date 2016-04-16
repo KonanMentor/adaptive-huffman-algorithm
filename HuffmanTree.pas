@@ -34,7 +34,7 @@ type
       procedure GetCode(Node: TNode; Code: TBits; Index: Integer); overload;
     public
       constructor Create(SymbolBitsCount: Integer);
-      procedure Add(Symbol: TBits);
+      function Add(Symbol: TBits): TBits;
       function GetCode(Symbol: TBits): TBits; overload;
       procedure Print; overload;
   end;
@@ -69,23 +69,27 @@ begin
     UpdateWeights(Node.Parent);
 end;
 
-procedure THuffmanTree.Add(Symbol: TBits);
+function THuffmanTree.Add(Symbol: TBits): TBits;
 var
   SymbolNode: TNode;
 begin
   SymbolNode := FSymbolNodes.Get(Symbol);
+  Result := TBits.Create;
   if SymbolNode = nil then
   begin
     FNYT.Left := TNode.Create(nil, FNYT);
     FNYT.Right := TNode.Create(Symbol, FNYT, 1);
     FSymbolNodes.Put(Symbol, FNYT.Right);
     UpdateWeights(FNYT);
+    GetCode(FNYT.Right, Result, 0);
+    Result := ConcatBits(Result, Symbol);
     FNYT := FNYT.Left;
   end
   else
   begin
     SymbolNode.Weight := SymbolNode.Weight + 1;
     UpdateWeights(SymbolNode);
+    GetCode(SymbolNode, Result, 0);
   end;
   WriteLn(BitsToCardinal(Symbol));
 end;

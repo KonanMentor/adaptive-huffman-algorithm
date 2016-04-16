@@ -6,22 +6,22 @@ type
     protected
       procedure DoRun; override;
     public
-      constructor Create;
+      constructor Create(Owner: TComponent); override;
   end;
 
-constructor TConsoleApplication.Create;
+constructor TConsoleApplication.Create(Owner: TComponent);
 begin
-  inherited Create(nil);
+  inherited Create(Owner);
   StopOnException := true;
 end;
 
 procedure TConsoleApplication.DoRun;
 const
   EncodeOptionName = 'e';
+  EncodedFileExtension = '.ah';
 var
-  SourceStream: TFileStream;
+  SourceStream, DestinationStream: TFileStream;
   FileName: String;
-  Encoder: TEncoder;
 begin
   if HasOption(EncodeOptionName) then
   begin
@@ -37,7 +37,17 @@ begin
         end;
     end;
 
-    Encoder := TEncoder.Create(SourceStream, nil);
+    try
+      DestinationStream := TFileStream.Create(FileName + EncodedFileExtension, fmOpenWrite or fmCreate);
+    except
+      on E: EFOpenError do
+        begin
+          WriteLn('Unable to create/write to ouput file');
+          Terminate;
+          Exit;
+        end;
+    end;
+    Encode(SourceStream, DestinationStream);
   end;
 
   Terminate;
@@ -47,7 +57,7 @@ var
   Application: TConsoleApplication;
 
 begin
-  Application := TConsoleApplication.Create;
+  Application := TConsoleApplication.Create(nil);
   Application.Run;
   Application.Free;
 end.

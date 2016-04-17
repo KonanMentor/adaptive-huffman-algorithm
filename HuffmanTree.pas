@@ -33,9 +33,12 @@ type
       procedure UpdateWeights(Node: TNode);
       procedure GetCode(Node: TNode; Code: TBits; Index: Integer); overload;
     public
+      type
+        TPredicate = function: Boolean of object;
       constructor Create(SymbolBitsCount: Integer);
       function Add(Symbol: TBits): TBits;
       function GetCode(Symbol: TBits): TBits; overload;
+      function GetSymbol(DoGoRight: TPredicate): TBits;
       procedure Print; overload;
   end;
 
@@ -81,7 +84,7 @@ begin
     FNYT.Right := TNode.Create(Symbol, FNYT, 1);
     FSymbolNodes.Put(Symbol, FNYT.Right);
     UpdateWeights(FNYT);
-    GetCode(FNYT.Right, Result, 0);
+    GetCode(FNYT, Result, 0);
     Result := ConcatBits(Result, Symbol);
     FNYT := FNYT.Left;
   end
@@ -129,6 +132,19 @@ end;
 procedure THuffmanTree.Print;
 begin
   Print(FRoot, '');
+end;
+
+function THuffmanTree.GetSymbol(DoGoRight: TPredicate): TBits;
+var
+  Node: TNode;
+begin
+  Node := FRoot;
+  while not IsLeaf(Node) do
+    if DoGoRight then
+      Node := Node.Right
+    else
+      Node := Node.Left;
+  Result := Node.Symbol;
 end;
 
 end.

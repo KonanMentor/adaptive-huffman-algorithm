@@ -15,24 +15,37 @@ const
   EOF = 256;
 var
   Tree: THuffmanTree;
-  Symbol, Code: TBits;
+  Symbol, EOFBits: TBits;
   BitWriter: TBitWriter;
+
+  procedure WriteSymbolCode(Symbol: TBits);
+  begin
+    if not Tree.Has(Symbol) then
+    begin
+      BitWriter.WriteBits(Tree.GetNYTCode());
+      BitWriter.WriteBits(Symbol);
+    end
+    else
+    begin
+      BitWriter.WriteBits(Tree.GetCode(Symbol));
+    end;
+  end;
 begin
   BitWriter := TBitWriter.Create(Destination);
   Tree := THuffmanTree.Create(SymbolBitsCount);
-  Tree.Print;
+  //Tree.Print;
   while Source.Position < Source.Size do
   begin
     Symbol := CardinalToBits(Source.ReadByte, SymbolBitsCount);
-    Code := Tree.Add(Symbol);
-    Tree.Print;
-    WriteLn(BitsToString(Code));
-    BitWriter.WriteBits(Code);
+    WriteSymbolCode(Symbol);
+    Tree.Add(Symbol);
+    //Tree.Print;
   end;
-  Code := Tree.Add(CardinalToBits(EOF, SymbolBitsCount));
   Tree.Print;
-  WriteLn(BitsToString(Code));
-  BitWriter.WriteBits(Code);
+  EOFBits := CardinalToBits(EOF, SymbolBitsCount);
+  WriteSymbolCode(EOFBits);
+  Tree.Add(EOFBits);
+  //WriteLn(BitsToString(Code));
   BitWriter.Flush;
 end;
 

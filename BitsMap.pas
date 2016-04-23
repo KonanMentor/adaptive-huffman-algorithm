@@ -12,6 +12,7 @@ type
     public
       constructor Create(BitsCount: Integer);
       function Get(Key: TBits): T;
+      function Has(Key: TBits): Boolean;
       procedure Put(Key: TBits; Value: T);
   end;
 
@@ -25,6 +26,11 @@ end;
 function TBitsMap<T>.Get(Key: TBits): T;
 begin
   Result := FTable[BitsToCardinal(Key)];
+end;
+
+function TBitsMap<T>.Has(Key: TBits): Boolean;
+begin
+  Result := FTable[BitsToCardinal(Key)] <> nil;
 end;
 
 procedure TBitsMap<T>.Put(Key: TBits; Value: T);

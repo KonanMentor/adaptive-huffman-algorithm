@@ -20,7 +20,7 @@ var
 begin
   BitReader := TBitReader.Create(Source);
   Tree := THuffmanTree.Create(SymbolBitsCount);
-  Tree.Print;
+  //Tree.Print;
   while true do
   begin
     Symbol := Tree.GetSymbol(BitReader.ReadBit);
@@ -29,9 +29,9 @@ begin
     if BitsToCardinal(Symbol) = EOF then
       break;
     Tree.Add(Symbol);
-    Tree.Print;
-    WriteLn('Symbol:');
-    WriteLn(BitsToString(Symbol));
+    //Tree.Print;
+    //WriteLn('Symbol:');
+    //WriteLn(BitsToString(Symbol));
     Destination.WriteByte(BitsToCardinal(Symbol));
   end;
 end;

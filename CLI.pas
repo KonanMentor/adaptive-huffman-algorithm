@@ -1,5 +1,5 @@
 uses
-  Interfaces, Classes, SysUtils, CustApp, Encoder, Decoder;
+  Interfaces, Classes, SysUtils, CustApp, Encoder, Decoder, Stopwatch;
 
 type
   TConsoleApplication = class(TCustomApplication)
@@ -24,6 +24,7 @@ const
 var
   SourceStream, DestinationStream: TFileStream;
   FileName: String;
+  Stopwatch: TStopwatch;
 begin
   if HasOption(EncodeOptionName) and HasOption(DecodeOptionName) then
   begin
@@ -56,7 +57,12 @@ begin
           Exit;
         end;
     end;
+
+    Stopwatch := TStopwatch.StartNew;
     Encode(SourceStream, DestinationStream);
+    WriteLn(Format('Compression ratio: %.2f', [DestinationStream.Size / SourceStream.Size]));
+    Stopwatch.Stop;
+    WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
   end;
 
   if HasOption(DecodeOptionName) then
@@ -83,7 +89,14 @@ begin
           Exit;
         end;
     end;
-    Decode(SourceStream, DestinationStream);
+    try
+      Stopwatch := TStopwatch.StartNew;
+      Decode(SourceStream, DestinationStream);
+      Stopwatch.Stop;
+      WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+    except
+      WriteLn('Unable to decode file');
+    end;
   end;
 
   Terminate;

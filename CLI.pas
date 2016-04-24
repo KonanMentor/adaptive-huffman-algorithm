@@ -58,11 +58,16 @@ begin
         end;
     end;
 
-    Stopwatch := TStopwatch.StartNew;
-    Encode(SourceStream, DestinationStream);
-    WriteLn(Format('Compression ratio: %.2f', [DestinationStream.Size / SourceStream.Size]));
-    Stopwatch.Stop;
-    WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+    try
+      Stopwatch := TStopwatch.StartNew;
+      Encode(SourceStream, DestinationStream);
+      WriteLn(Format('Compression ratio: %.2f', [DestinationStream.Size / SourceStream.Size]));
+      Stopwatch.Stop;
+      WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+    finally
+      SourceStream.Free;
+      DestinationStream.Free;
+    end;
   end;
 
   if HasOption(DecodeOptionName) then
@@ -90,12 +95,17 @@ begin
         end;
     end;
     try
-      Stopwatch := TStopwatch.StartNew;
-      Decode(SourceStream, DestinationStream);
-      Stopwatch.Stop;
-      WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
-    except
-      WriteLn('Unable to decode file');
+      try
+        Stopwatch := TStopwatch.StartNew;
+        Decode(SourceStream, DestinationStream);
+        Stopwatch.Stop;
+        WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+      except
+        WriteLn('Unable to decode file');
+      end;
+    finally
+      SourceStream.Free;
+      DestinationStream.Free;
     end;
   end;
 

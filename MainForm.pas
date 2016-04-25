@@ -12,7 +12,7 @@ type
     private
       FFileNameEdit: TFileNameEdit;
       FEncodeButton, FDecodeButton: TButton;
-      procedure FormPaint(Sender: TObject);
+      procedure FormResize(Sender: TObject);
       procedure EncodeButtonClick(Sender: TObject);
       procedure DecodeButtonClick(Sender: TObject);
   end;
@@ -120,10 +120,10 @@ begin
   FDecodeButton.Caption := 'Decode';
   FDecodeButton.OnClick := DecodeButtonClick;
 
-  OnPaint := FormPaint;
+  OnResize := FormResize;
 end;
 
-procedure TMainForm.FormPaint(Sender: TObject);
+procedure TMainForm.FormResize(Sender: TObject);
 begin
   FFileNameEdit.Width := Self.Width;
 

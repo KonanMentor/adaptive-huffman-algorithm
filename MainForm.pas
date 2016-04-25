@@ -19,6 +19,23 @@ type
 
 implementation
 
+function FormatBytes(Bytes: Integer): String;
+const
+  Factor = 1024;
+  BytesInKilobyte = Factor;
+  BytesInMegabyte = Factor * BytesInKilobyte;
+  BytesInGigabyte = Factor * BytesInMegabyte;
+begin
+  if Bytes < BytesInKilobyte then
+    Result := Format('%d B', [Bytes])
+  else if Bytes < BytesInMegabyte then
+    Result := Format('%.1f KB', [Bytes / BytesInKilobyte])
+  else if Bytes < BytesInGigabyte then
+    Result := Format('%.1f MB', [Bytes / BytesInMegabyte])
+  else
+    Result := Format('%.1f GB', [Bytes / BytesInGigabyte])
+end;
+
 procedure TMainForm.EncodeButtonClick(Sender: TObject);
 const
   EncodedFileExtension = '.ah';
@@ -52,7 +69,7 @@ begin
     Stopwatch := TStopwatch.StartNew;
     Encode(SourceStream, DestinationStream);
     Stopwatch.Stop;
-    ShowMessage(Format('Compression ratio: %.2f' + sLineBreak + 'Elapsed time: %.3fs', [DestinationStream.Size / SourceStream.Size, Stopwatch.GetElapsedMilliseconds / 1000]));
+    ShowMessage(Format('Compression ratio: %.2f' + sLineBreak + 'Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Compressed file size: %s', [DestinationStream.Size / SourceStream.Size, Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
   finally
     SourceStream.Free;
     DestinationStream.Free;
@@ -93,7 +110,7 @@ begin
       Stopwatch := TStopwatch.StartNew;
       Decode(SourceStream, DestinationStream);
       Stopwatch.Stop;
-      ShowMessage(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+      ShowMessage(Format('Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Decompressed file size: %s', [Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
     except
       ShowMessage('Unable to decode file');
     end;

@@ -1,5 +1,5 @@
 uses
-  Interfaces, Classes, SysUtils, CustApp, Encoder, Decoder, Stopwatch;
+  Interfaces, Classes, SysUtils, CustApp, Encoder, Decoder, Stopwatch, FormatUtils;
 
 type
   TConsoleApplication = class(TCustomApplication)
@@ -61,9 +61,8 @@ begin
     try
       Stopwatch := TStopwatch.StartNew;
       Encode(SourceStream, DestinationStream);
-      WriteLn(Format('Compression ratio: %.2f', [DestinationStream.Size / SourceStream.Size]));
       Stopwatch.Stop;
-      WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+      WriteLn(Format('Compression ratio: %.2f' + sLineBreak + 'Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Compressed file size: %s', [DestinationStream.Size / SourceStream.Size, Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
     finally
       SourceStream.Free;
       DestinationStream.Free;
@@ -99,7 +98,7 @@ begin
         Stopwatch := TStopwatch.StartNew;
         Decode(SourceStream, DestinationStream);
         Stopwatch.Stop;
-        WriteLn(Format('Elapsed time: %.3fs', [Stopwatch.GetElapsedMilliseconds / 1000]));
+      WriteLn(Format('Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Decompressed file size: %s', [Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
       except
         WriteLn('Unable to decode file');
       end;

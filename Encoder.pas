@@ -41,7 +41,7 @@ begin
     Tree.Add(Symbol);
     //Tree.Print;
   end;
-  Tree.Print;
+  //Tree.Print;
   EOFBits := CardinalToBits(EOF, SymbolBitsCount);
   WriteSymbolCode(EOFBits);
   Tree.Add(EOFBits);

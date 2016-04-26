@@ -3,7 +3,7 @@ unit Encoder;
 interface
 
 uses
-  Classes, HuffmanTree, BitsHelper, BitWriter;
+  Classes, HuffmanTree, BitsHelper, BitWriter, BufferedStream;
 
 procedure Encode(Source, Destination: TStream);
 
@@ -17,6 +17,7 @@ var
   Tree: THuffmanTree;
   Symbol, EOFBits: TBits;
   BitWriter: TBitWriter;
+  BufferedSource: TBufferedStream;
 
   procedure WriteSymbolCode(Symbol: TBits);
   begin
@@ -33,10 +34,11 @@ var
 begin
   BitWriter := TBitWriter.Create(Destination);
   Tree := THuffmanTree.Create(SymbolBitsCount);
+  BufferedSource := TBufferedStream.Create(Source);
   //Tree.Print;
-  while Source.Position < Source.Size do
+  while BufferedSource.Position < BufferedSource.Size do
   begin
-    Symbol := CardinalToBits(Source.ReadByte, SymbolBitsCount);
+    Symbol := CardinalToBits(BufferedSource.ReadByte, SymbolBitsCount);
     WriteSymbolCode(Symbol);
     Tree.Add(Symbol);
     //Tree.Print;

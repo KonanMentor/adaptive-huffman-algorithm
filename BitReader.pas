@@ -3,14 +3,14 @@ unit BitReader;
 interface
 
 uses
-  Classes;
+  Classes, BufferedStream;
 
 type
   TBitReader = class
     const
       BITS_IN_BYTE = 8;
     private
-      FSource: TStream;
+      FSource: TBufferedStream;
       FBuffer: Byte;
       FBufferIndex: Byte;
       procedure ReadBuffer;
@@ -24,7 +24,7 @@ implementation
 
 constructor TBitReader.Create(Source: TStream);
 begin
-  FSource := Source;
+  FSource := TBufferedStream.Create(Source);
   FBufferIndex := SizeOf(FBuffer) * BITS_IN_BYTE - 1;
 end;
 

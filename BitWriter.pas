@@ -3,16 +3,17 @@ unit BitWriter;
 interface
 
 uses
-  Classes;
+  Classes, BufferedStream;
 
 type
   TBitWriter = class
     const
       BITS_IN_BYTE = 8;
     private
-      FDestination: TStream;
+      FDestination: TBufferedStream;
       FBuffer: Byte;
       FBufferIndex: Byte;
+      procedure FlushBuffer;
     public
       constructor Create(Destination: TStream);
       procedure WriteBit(Value: Boolean);
@@ -24,7 +25,7 @@ implementation
 
 constructor TBitWriter.Create(Destination: TStream);
 begin
-  FDestination := Destination;
+  FDestination := TBufferedStream.Create(Destination);
   FBufferIndex := SizeOf(FBuffer) * BITS_IN_BYTE - 1;
 end;
 
@@ -34,7 +35,7 @@ begin
     FBuffer := FBuffer xor (1 shl FBufferIndex);
   if FBufferIndex = 0 then
   begin
-    Flush;
+    FlushBuffer;
     FBufferIndex := SizeOf(FBuffer) * BITS_IN_BYTE - 1;
   end
   else
@@ -49,13 +50,19 @@ begin
     WriteBit(Bits.Get(i));
 end;
 
-procedure TBitWriter.Flush;
+procedure TBitWriter.FlushBuffer;
 begin
   if FBufferIndex = SizeOf(FBuffer) * BITS_IN_BYTE - 1 then
     Exit;
 
   FDestination.WriteByte(FBuffer);
   FBuffer := 0;
+end;
+
+procedure TBitWriter.Flush;
+begin
+  FlushBuffer;
+  FDestination.Flush;
 end;
 
 end.

@@ -1,5 +1,5 @@
 uses
-  Forms, Interfaces, MainForm;
+  cthreads, cmem, Forms, Interfaces, MainForm;
 
 var
   MainForm: TMainForm;

@@ -3,7 +3,7 @@ unit BufferedStream;
 interface
 
 uses
-  Classes;
+  Classes, SysUtils;
 
 type
   TBufferedStream = class(TStream)
@@ -53,8 +53,11 @@ begin
 end;
 
 procedure TBufferedStream.Fetch;
+var
+  ActualLength: Integer;
 begin
-  FStream.Read(Pointer(FReadBuffer)^, Length(FReadBuffer));
+  ActualLength := FStream.Read(Pointer(FReadBuffer)^, Length(FReadBuffer));
+  SetLength(FReadBuffer, ActualLength);
   FReadBufferIndex := 0;
 end;
 

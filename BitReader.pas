@@ -13,11 +13,14 @@ type
       FSource: TBufferedStream;
       FBuffer: Byte;
       FBufferIndex: Byte;
+      FPosition, FSize: Int64;
       procedure ReadBuffer;
     public
       constructor Create(Source: TStream);
       function ReadBit: Boolean;
       function ReadBits(Count: Cardinal): TBits;
+      property Position: Int64 read FPosition;
+      property Size: Int64 read FSize;
   end;
 
 implementation
@@ -26,6 +29,7 @@ constructor TBitReader.Create(Source: TStream);
 begin
   FSource := TBufferedStream.Create(Source);
   FBufferIndex := SizeOf(FBuffer) * BITS_IN_BYTE - 1;
+  FSize := FSource.Size * BITS_IN_BYTE;
 end;
 
 function TBitReader.ReadBit: Boolean;
@@ -34,6 +38,8 @@ begin
     ReadBuffer;
 
   Result := (FBuffer and (1 shl FBufferIndex)) <> 0;
+
+  FPosition += 1;
 
   if FBufferIndex = 0 then
     FBufferIndex := SizeOf(FBuffer) * BITS_IN_BYTE - 1

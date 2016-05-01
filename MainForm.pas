@@ -3,7 +3,7 @@ unit MainForm;
 interface
 
 uses
-  Forms, Classes, EditBtn, StdCtrls, Encoder, Decoder, Stopwatch, Dialogs, SysUtils, FormatUtils;
+  Forms, Classes, EditBtn, StdCtrls, EncoderThread, DecoderThread, Stopwatch, Dialogs, SysUtils, FormatUtils, ComCtrls, Math;
 
 type
   TMainForm = class(TForm)
@@ -12,6 +12,17 @@ type
     private
       FFileNameEdit: TFileNameEdit;
       FEncodeButton, FDecodeButton: TButton;
+      FProgressBar: TProgressBar;
+      FEncoderThread: TEncoderThread;
+      FDecoderThread: TDecoderThread;
+      FStopwatch: TStopwatch;
+      FSourceStream, FDestinationStream: TFileStream;
+      procedure DisableCodingOperations;
+      procedure EnableCodingOperations;
+      procedure Encoded;
+      procedure Decoded;
+      procedure DecoderError;
+      procedure Progress(PercentComplete: Double);
       procedure FormResize(Sender: TObject);
       procedure EncodeButtonClick(Sender: TObject);
       procedure DecodeButtonClick(Sender: TObject);
@@ -19,17 +30,71 @@ type
 
 implementation
 
+procedure TMainForm.DisableCodingOperations;
+begin
+  FEncodeButton.Enabled := false;
+  FDecodeButton.Enabled := false;
+end;
+
+procedure TMainForm.EnableCodingOperations;
+begin
+  FEncodeButton.Enabled := true;
+  FDecodeButton.Enabled := true;
+end;
+
+procedure TMainForm.Encoded;
+begin
+  FProgressBar.Position := 0;
+  FStopwatch.Stop;
+  ShowMessage(Format('Compression ratio: %.2f' + sLineBreak + 'Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Compressed file size: %s', [FDestinationStream.Size / FSourceStream.Size, FStopwatch.GetElapsedMilliseconds / 1000, FormatBytes(FSourceStream.Size), FormatBytes(FDestinationStream.Size)]));
+  FStopwatch.Free;
+  FSourceStream.Free;
+  FDestinationStream.Free;
+  FEncoderThread.Terminate;
+  FEncoderThread.Free;
+  EnableCodingOperations;
+end;
+
+procedure TMainForm.Decoded;
+begin
+  FProgressBar.Position := 0;
+  FStopwatch.Stop;
+  ShowMessage(Format('Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Decompressed file size: %s', [FStopwatch.GetElapsedMilliseconds / 1000, FormatBytes(FSourceStream.Size), FormatBytes(FDestinationStream.Size)]));
+  FStopwatch.Free;
+  FSourceStream.Free;
+  FDestinationStream.Free;
+  FDecoderThread.Terminate;
+  FDecoderThread.Free;
+  EnableCodingOperations;
+end;
+
+procedure TMainForm.DecoderError;
+begin
+  FProgressBar.Position := 0;
+  FStopwatch.Stop;
+  ShowMessage('Unable to decode file');
+  FStopwatch.Free;
+  FSourceStream.Free;
+  FDestinationStream.Free;
+  FDecoderThread.Terminate;
+  FDecoderThread.Free;
+  EnableCodingOperations;
+end;
+
+procedure TMainForm.Progress(PercentComplete: Double);
+begin
+  FProgressBar.Position := Ceil(PercentComplete * 100);
+end;
+
 procedure TMainForm.EncodeButtonClick(Sender: TObject);
 const
   EncodedFileExtension = '.ah';
 var
-  SourceStream, DestinationStream: TFileStream;
   FileName: String;
-  Stopwatch: TStopwatch;
 begin
   FileName := FFileNameEdit.FileName;
   try
-    SourceStream := TFileStream.Create(FileName, fmOpenRead);
+    FSourceStream := TFileStream.Create(FileName, fmOpenRead);
   except
     on E: EFOpenError do
       begin
@@ -39,7 +104,7 @@ begin
   end;
 
   try
-    DestinationStream := TFileStream.Create(FileName + EncodedFileExtension, fmOpenWrite or fmCreate);
+    FDestinationStream := TFileStream.Create(FileName + EncodedFileExtension, fmOpenWrite or fmCreate);
   except
     on E: EFOpenError do
       begin
@@ -48,28 +113,23 @@ begin
       end;
   end;
 
-  try
-    Stopwatch := TStopwatch.StartNew;
-    Encode(SourceStream, DestinationStream);
-    Stopwatch.Stop;
-    ShowMessage(Format('Compression ratio: %.2f' + sLineBreak + 'Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Compressed file size: %s', [DestinationStream.Size / SourceStream.Size, Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
-  finally
-    SourceStream.Free;
-    DestinationStream.Free;
-  end;
+  DisableCodingOperations;
+  FStopwatch := TStopwatch.StartNew;
+  FEncoderThread := TEncoderThread.Create(true, FSourceStream, FDestinationStream);
+  FEncoderThread.OnEncoded := Encoded;
+  FEncoderThread.OnProgress := Progress;
+  FEncoderThread.Start;
 end;
 
 procedure TMainForm.DecodeButtonClick(Sender: TObject);
 const
   DecodedFileExtension = '.out';
 var
-  SourceStream, DestinationStream: TFileStream;
   FileName: String;
-  Stopwatch: TStopwatch;
 begin
   FileName := FFileNameEdit.FileName;
   try
-    SourceStream := TFileStream.Create(FileName, fmOpenRead);
+    FSourceStream := TFileStream.Create(FileName, fmOpenRead);
   except
     on E: EFOpenError do
       begin
@@ -79,7 +139,7 @@ begin
   end;
 
   try
-    DestinationStream := TFileStream.Create(FileName + DecodedFileExtension, fmOpenWrite or fmCreate);
+    FDestinationStream := TFileStream.Create(FileName + DecodedFileExtension, fmOpenWrite or fmCreate);
   except
     on E: EFOpenError do
       begin
@@ -88,19 +148,13 @@ begin
       end;
   end;
 
-  try
-    try
-      Stopwatch := TStopwatch.StartNew;
-      Decode(SourceStream, DestinationStream);
-      Stopwatch.Stop;
-      ShowMessage(Format('Elapsed time: %.3fs' + sLineBreak + 'Original file size: %s' + sLineBreak + 'Decompressed file size: %s', [Stopwatch.GetElapsedMilliseconds / 1000, FormatBytes(SourceStream.Size), FormatBytes(DestinationStream.Size)]));
-    except
-      ShowMessage('Unable to decode file');
-    end;
-  finally
-    SourceStream.Free;
-    DestinationStream.Free;
-  end;
+  DisableCodingOperations;
+  FStopwatch := TStopwatch.StartNew;
+  FDecoderThread := TDecoderThread.Create(true, FSourceStream, FDestinationStream);
+  FDecoderThread.OnDecoded := Decoded;
+  FDecoderThread.OnProgress := Progress;
+  FDecoderThread.OnError := DecoderError;
+  FDecoderThread.Start;
 end;
 
 constructor TMainForm.CreateNew(AOwner: TComponent; Dummy: Integer = 0);
@@ -120,6 +174,10 @@ begin
   FDecodeButton.Caption := 'Decode';
   FDecodeButton.OnClick := DecodeButtonClick;
 
+  FProgressBar := TProgressBar.Create(Self);
+  FProgressBar.Parent := Self;
+  FProgressBar.Smooth := true;
+
   OnResize := FormResize;
 end;
 
@@ -127,14 +185,17 @@ procedure TMainForm.FormResize(Sender: TObject);
 begin
   FFileNameEdit.Width := Self.Width;
 
+  FProgressBar.Top := Self.Height - FProgressBar.Height;
+  FProgressBar.Width := Self.Width;
+
   FEncodeButton.Top := FFileNameEdit.Top + FFileNameEdit.Height;
   FEncodeButton.Width := Self.Width div 2;
-  FEncodeButton.Height := Self.Height - FFileNameEdit.Height;
+  FEncodeButton.Height := Self.Height - FFileNameEdit.Height - FProgressBar.Height;
 
   FDecodeButton.Top := FFileNameEdit.Top + FFileNameEdit.Height;
   FDecodeButton.Left := Self.Width div 2;
   FDecodeButton.Width := Self.Width div 2;
-  FDecodeButton.Height := Self.Height - FFileNameEdit.Height;
+  FDecodeButton.Height := Self.Height - FFileNameEdit.Height - FProgressBar.Height;
 end;
 
 end.
